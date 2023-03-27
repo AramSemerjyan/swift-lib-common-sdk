@@ -121,12 +121,18 @@ open class PSBaseApiClient {
         let logMessage = "<-- \(urlRequest.url!.absoluteString) \(statusCode)"
         
         if 200 ... 299 ~= statusCode {
-            logger?.log(
-                level: .DEBUG,
-                message: logMessage,
-                response: urlResponse
-            )
-            apiRequest.pendingPromise.resolver.fulfill(responseData ?? "")
+            if statusCode == 204 {
+                let noContentError = mapError(body: "")
+                noContentError.statusCode = 204
+                apiRequest.pendingPromise.resolver.reject(noContentError)
+            } else {
+                logger?.log(
+                    level: .DEBUG,
+                    message: logMessage,
+                    response: urlResponse
+                )
+                apiRequest.pendingPromise.resolver.fulfill(responseData ?? "")
+            }
         } else {
             let error = mapError(body: responseData)
             error.statusCode = statusCode
